@@ -4,9 +4,52 @@
 		<meta charset="utf-8" />
 		<title>Lock Bug Test</title>
 		<script src="emscripten-api.js"></script>
+		<script>
+
+const TEST_NOT_STARTED = 0;       // The test hasn't yet started
+const TEST_TRY_ACQUIRE = 1;       // Acquired in main, fail in process()
+const TEST_WAIT_ACQUIRE_FAIL = 2; // Keep acquired so time-out
+const TEST_WAIT_ACQUIRE = 3;      // Release in main, succeed in process()
+const TEST_RELEASE = 4;           // Release in process after above
+
+// Audio context (created in main())
+var audioContext;
+
+// Lock used in all the tests (address in 'wasmMem')
+const testLock = 0;
+// Which test is running (sometimes in the worklet, sometimes in the worker/main)
+var whichTest = TEST_NOT_STARTED;
+// Time at which the test starts, taken in main()
+var startTime = 0;
+// Has TEST_WAIT_ACQUIRE unlocked testLock?
+var waitAcquireUnlocked = false;
+
+function main() {
+	emscripten_lock_init(testLock);
+	var hasLock = emscripten_lock_busyspin_wait_acquire(testLock, 0);
+	assert(hasLock);
+
+	startTime = emscripten_get_now();
+
+	/*
+	 * Wraps up all the audio worklet creation:
+	 *	emscripten_create_audio_context()
+	 *	emscripten_start_wasm_audio_worklet_thread_async()
+	 *	emscripten_create_wasm_audio_worklet_processor_async()
+	 *	emscripten_create_wasm_audio_worklet_node()
+	 *	emscripten_audio_node_connect()
+	 */
+	audioContext = new AudioContext();
+	assert(audioContext);
+	audioContext.audioWorklet.addModule("test-processor.js").then(() => {
+		var node = new AudioWorkletNode(audioContext, "test-processor");
+		node.connect(audioContext.destination);
+	});
+}
+		</script>
 	</head>
 	<body>
 		<p>Click to start the test, results are in the console.</p>
-		<button type="button" onclick="console.log('Hello')">Start Test</button>
+		<button type="button" onclick="main()">Start Test</button>
 	</body>
 </html>
