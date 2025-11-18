@@ -1,10 +1,28 @@
+import {
+	assert,
+	emscripten_get_now,
+	emscripten_atomic_cas_u32,
+	emscripten_lock_init,
+	emscripten_lock_busyspin_wait_acquire,
+	emscripten_lock_try_acquire,
+	emscripten_lock_release
+} from "./emscripten-api.js";
+
 class TestProcessor extends AudioWorkletProcessor {
-	constructor() {
+	constructor(args) {
 		super();
+		if (args && args.processorOptions) {
+			for (var opt in args.processorOptions) {
+				globalThis[opt] = args.processorOptions[opt];
+			}
+			HEAPU32[0] = emscripten_get_now();
+		}
+		this.port.onmessage = (e) => {
+			console.log(e.data);
+		};
 	}
 
 	process(inputs, outputs, params) {
-		console.log("Here!");
 		return true;
 	}
 }

@@ -2,9 +2,23 @@
 <html>
 	<head>
 		<meta charset="utf-8" />
+		<meta http-equiv="Pragma" content="no-cache" />
+		<meta http-equiv="Expires" content="-1" />
+		<script type="module">
+/*
+ * Push the shared Emscripten API exports into the global scope (we use them
+ * from both the web worklet and here, and with the same HEAPU32).
+ */
+import * as Emscripten from "./emscripten-api.js";
+for (var func in Emscripten) {
+	globalThis[func] = Emscripten[func];
+}
+		</script>
 		<title>Lock Bug Test</title>
-		<script src="emscripten-api.js"></script>
 		<script>
+
+// Replicating Emscripten's heap
+const HEAPU32 = new Uint32Array(new SharedArrayBuffer(1024));
 
 const TEST_NOT_STARTED = 0;       // The test hasn't yet started
 const TEST_TRY_ACQUIRE = 1;       // Acquired in main, fail in process()
@@ -14,6 +28,8 @@ const TEST_RELEASE = 4;           // Release in process after above
 
 // Audio context (created in main())
 var audioContext;
+// AudioWorkletNode attached to the audio context
+var workletNode;
 
 // Lock used in all the tests (address in 'wasmMem')
 const testLock = 0;
@@ -42,10 +58,15 @@ function main() {
 	audioContext = new AudioContext();
 	assert(audioContext);
 	audioContext.audioWorklet.addModule("test-processor.js").then(() => {
-		var node = new AudioWorkletNode(audioContext, "test-processor");
-		node.connect(audioContext.destination);
+		workletNode = new AudioWorkletNode(audioContext, "test-processor", {
+			processorOptions: {
+				HEAPU32
+			}
+		});
+		workletNode.connect(audioContext.destination);
 	});
 }
+
 		</script>
 	</head>
 	<body>
