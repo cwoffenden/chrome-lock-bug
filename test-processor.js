@@ -2,6 +2,8 @@ import {
 	assert,
 	emscripten_get_now,
 	emscripten_atomic_cas_u32,
+	emscripten_atomic_load_u32,
+	emscripten_atomic_store_u32,
 	emscripten_lock_init,
 	emscripten_lock_busyspin_wait_acquire,
 	emscripten_lock_try_acquire,
@@ -15,7 +17,7 @@ class TestProcessor extends AudioWorkletProcessor {
 			for (var opt in args.processorOptions) {
 				globalThis[opt] = args.processorOptions[opt];
 			}
-			HEAPU32[0] = emscripten_get_now();
+			emscripten_atomic_store_u32(whichTest, Test.TEST_NOT_STARTED);
 		}
 		this.port.onmessage = (e) => {
 			console.log(e.data);

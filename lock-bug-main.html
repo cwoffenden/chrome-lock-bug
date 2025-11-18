@@ -20,51 +20,89 @@ for (var func in Emscripten) {
 // Replicating Emscripten's heap
 const HEAPU32 = new Uint32Array(new SharedArrayBuffer(1024));
 
-const TEST_NOT_STARTED = 0;       // The test hasn't yet started
-const TEST_TRY_ACQUIRE = 1;       // Acquired in main, fail in process()
-const TEST_WAIT_ACQUIRE_FAIL = 2; // Keep acquired so time-out
-const TEST_WAIT_ACQUIRE = 3;      // Release in main, succeed in process()
-const TEST_RELEASE = 4;           // Release in process after above
+const Test = {
+	'TEST_LOADING': 0,           // The page is still loading
+	'TEST_NOT_STARTED': 1,       // The test hasn't yet started
+	'TEST_TRY_ACQUIRE': 2,       // Acquired in main, fail in process()
+	'TEST_WAIT_ACQUIRE_FAIL': 3, // Keep acquired so time-out
+	'TEST_WAIT_ACQUIRE': 4,      // Release in main, succeed in process()
+	'TEST_RELEASE': 5,           // Release in process after above
+};
 
-// Audio context (created in main())
-var audioContext;
-// AudioWorkletNode attached to the audio context
-var workletNode;
-
-// Lock used in all the tests (address in 'wasmMem')
+// Lock used in all the tests (address in HEAPU32.buffer)
 const testLock = 0;
-// Which test is running (sometimes in the worklet, sometimes in the worker/main)
-var whichTest = TEST_NOT_STARTED;
+// Which test is running in worker/main (address in HEAPU32.buffer)
+const whichTest = 4;
+
 // Time at which the test starts, taken in main()
 var startTime = 0;
 // Has TEST_WAIT_ACQUIRE unlocked testLock?
 var waitAcquireUnlocked = false;
 
+// Audio context (created in main())
+var audioContext = null;
+// AudioWorkletNode attached to the audio context
+var workletNode = null;
+
+/*
+ * Called every 10ms-ish using a timeout.
+ */
+function MainLoop(time, data) {
+	switch (emscripten_atomic_load_u32(whichTest)) {
+	case Test.TEST_LOADING:
+		console.log("Still loading");
+		break;
+	case Test.TEST_NOT_STARTED:
+		console.log("Not started");
+		break;
+	default:
+		return false;
+	}
+    // Run again
+    return true;
+}
+
 function main() {
+	/*
+	 * The basics: do locks work?
+	 */
 	emscripten_lock_init(testLock);
 	var hasLock = emscripten_lock_busyspin_wait_acquire(testLock, 0);
 	assert(hasLock);
-
+	/*
+	 * Then prepare to run (note the mimic of '_Atomic Test whichTest')
+	 */
+	emscripten_atomic_store_u32(whichTest, Test.TEST_LOADING);
 	startTime = emscripten_get_now();
-
 	/*
 	 * Wraps up all the audio worklet creation:
+	 *
 	 *	emscripten_create_audio_context()
 	 *	emscripten_start_wasm_audio_worklet_thread_async()
 	 *	emscripten_create_wasm_audio_worklet_processor_async()
 	 *	emscripten_create_wasm_audio_worklet_node()
 	 *	emscripten_audio_node_connect()
+	 *
+	 * And we pass to the worklet the heap, Test enums, lock and which test
+	 * addresses, and it has the Emscripten API imported.
 	 */
 	audioContext = new AudioContext();
 	assert(audioContext);
 	audioContext.audioWorklet.addModule("test-processor.js").then(() => {
 		workletNode = new AudioWorkletNode(audioContext, "test-processor", {
 			processorOptions: {
-				HEAPU32
+				HEAPU32,
+				Test,
+				testLock,
+				whichTest,
 			}
 		});
 		workletNode.connect(audioContext.destination);
 	});
+	/*
+	 * Keep this the same as the C version and let MainLoop watch 'whichTest'.
+	 */
+	emscripten_set_timeout_loop(MainLoop, 10, null);
 }
 
 		</script>
