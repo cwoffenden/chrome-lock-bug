@@ -17,8 +17,10 @@ for (var func in Emscripten) {
 		<title>Lock Bug Test</title>
 		<script>
 
-// Replicating Emscripten's heap
-const HEAPU32 = new Uint32Array(new SharedArrayBuffer(1024));
+// Emulating Emscripten's heap
+const wasmMemory = new SharedArrayBuffer(1024);
+const HEAPU32 = new Uint32Array(wasmMemory);
+const HEAP32 = new Int32Array(wasmMemory);
 
 const Test = {
 	'TEST_LOADING': 0,           // The page is still loading
@@ -26,7 +28,8 @@ const Test = {
 	'TEST_TRY_ACQUIRE': 2,       // Acquired in main, fail in process()
 	'TEST_WAIT_ACQUIRE_FAIL': 3, // Keep acquired so time-out
 	'TEST_WAIT_ACQUIRE': 4,      // Release in main, succeed in process()
-	'TEST_RELEASE': 5,           // Release in process after above
+	'TEST_RELEASE': 5,           // Release in process() after above
+	'TEST_DONE': 6,              // Test finished
 };
 
 // Lock used in all the tests (address in HEAPU32.buffer)
@@ -41,7 +44,7 @@ var waitAcquireUnlocked = false;
 
 // Audio context (created in main())
 var audioContext = null;
-// AudioWorkletNode attached to the audio context
+// AudioWorkletNode attached to the audio context (to query or post a message)
 var workletNode = null;
 
 /*
@@ -50,19 +53,39 @@ var workletNode = null;
 function MainLoop(time, data) {
 	switch (emscripten_atomic_load_u32(whichTest)) {
 	case Test.TEST_LOADING:
-		console.log("Still loading");
+		// Wait until the AudioWorkletProcessor (AWP) has loaded
+		emscripten_out("Still loading");
 		break;
 	case Test.TEST_NOT_STARTED:
-		console.log("Not started");
+		// We're loaded, let the AWP know to start
+		emscripten_out("Staring test");
+		emscripten_atomic_store_u32(whichTest, Test.TEST_TRY_ACQUIRE);
 		break;
-	default:
+	case Test.TEST_WAIT_ACQUIRE:
+		if (!waitAcquireUnlocked) {
+			// Release here to acquire in process()
+			emscripten_lock_release(testLock);
+			emscripten_out("TEST_WAIT_ACQUIRE: worker/main released lock");
+			waitAcquireUnlocked = true;
+		}
+		break;
+	case Test.TEST_DONE:
+		// Finished, exit from the main thread
+		result = 0 | (emscripten_get_now() - startTime);
+		emscripten_outf("TEST_DONE: %dms (expect: > 100)", result);
 		return false;
+	default:
+		break;
 	}
     // Run again
     return true;
 }
 
 function main() {
+	if (audioContext) {
+		emscripten_out("This was designed to run once, reload the page")
+		return;
+	}
 	/*
 	 * The basics: do locks work?
 	 */
@@ -84,7 +107,7 @@ function main() {
 	 *	emscripten_audio_node_connect()
 	 *
 	 * And we pass to the worklet the heap, Test enums, lock and which test
-	 * addresses, and it has the Emscripten API imported.
+	 * addresses (the AudioWorkletProcessor has the Emscripten API imported).
 	 */
 	audioContext = new AudioContext();
 	assert(audioContext);
@@ -92,6 +115,7 @@ function main() {
 		workletNode = new AudioWorkletNode(audioContext, "test-processor", {
 			processorOptions: {
 				HEAPU32,
+				HEAP32,
 				Test,
 				testLock,
 				whichTest,
