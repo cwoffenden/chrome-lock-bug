@@ -9,9 +9,6 @@
 
 export function assert(val) {
 	console.assert(val);
-	if (!val) {
-		console.trace();
-	}
 }
 
 // emscripten/emscripten.h

@@ -32,6 +32,9 @@ const Test = {
 	'TEST_DONE': 6,              // Test finished
 };
 
+// Style for the MainLoop log (magenta)
+const CSS = "color: #F0F";
+
 // Lock used in all the tests (address in HEAPU32.buffer)
 const testLock = 0;
 // Which test is running in worker/main (address in HEAPU32.buffer)
@@ -51,34 +54,46 @@ var workletNode = null;
  * Called every 10ms-ish using a timeout.
  */
 function MainLoop(time, data) {
+	var runAgain = true;
+	emscripten_outf("%c*** enter MainLoop()", CSS);
 	switch (emscripten_atomic_load_u32(whichTest)) {
 	case Test.TEST_LOADING:
 		// Wait until the AudioWorkletProcessor (AWP) has loaded
-		emscripten_out("Still loading");
+		emscripten_outf("%cTEST_LOADING: Still loading", CSS);
 		break;
 	case Test.TEST_NOT_STARTED:
 		// We're loaded, let the AWP know to start
-		emscripten_out("Staring test");
+		emscripten_outf("%cTEST_NOT_STARTED: Staring test", CSS);
 		emscripten_atomic_store_u32(whichTest, Test.TEST_TRY_ACQUIRE);
+		break;
+	case Test.TEST_TRY_ACQUIRE:
+		emscripten_out("%cTEST_TRY_ACQUIRE: worker/main nothing to do", CSS);
+		break;
+	case Test.TEST_WAIT_ACQUIRE_FAIL:
+		emscripten_outf("%cTEST_WAIT_ACQUIRE_FAIL: worker/main nothing to do", CSS);
 		break;
 	case Test.TEST_WAIT_ACQUIRE:
 		if (!waitAcquireUnlocked) {
 			// Release here to acquire in process()
+			emscripten_outf("%cTEST_WAIT_ACQUIRE: worker/main releasing lock", CSS);
 			emscripten_lock_release(testLock);
-			emscripten_out("TEST_WAIT_ACQUIRE: worker/main released lock");
+			emscripten_outf("%cTEST_WAIT_ACQUIRE: worker/main released", CSS);
 			waitAcquireUnlocked = true;
+		} else {
+			emscripten_outf("%cTEST_WAIT_ACQUIRE: worker/main already unlocked", CSS);
 		}
 		break;
-	case Test.TEST_DONE:
-		// Finished, exit from the main thread
-		result = 0 | (emscripten_get_now() - startTime);
-		emscripten_outf("TEST_DONE: %dms (expect: > 100)", result);
-		return false;
-	default:
+	case Test.TEST_RELEASE:
+		emscripten_outf("%cTEST_RELEASE: worker/main nothing to do", CSS);
 		break;
+	default:
+		// Finished, exit from the main thread
+		result = emscripten_get_now() - startTime;
+		emscripten_outf("%cTEST_DONE: %dms (expect: > 100)", CSS, result);
+		runAgain = false;
 	}
-    // Run again
-    return true;
+	emscripten_outf("%c*** exit MainLoop()", CSS);
+    return runAgain;
 }
 
 function main() {

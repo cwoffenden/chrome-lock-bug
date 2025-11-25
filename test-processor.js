@@ -8,6 +8,9 @@ import {
 	emscripten_lock_release
 } from "./emscripten-api.js";
 
+// Style for the process() log (green)
+const CSS = "color: #0F0";
+
 class TestProcessor extends AudioWorkletProcessor {
 	constructor(args) {
 		super();
@@ -25,19 +28,26 @@ class TestProcessor extends AudioWorkletProcessor {
 	}
 
 	process(inputs, outputs, params) {
+		var runAgain = true;
+		emscripten_outf("%c*** enter process()", CSS);
 		var result = 0;
 		switch (emscripten_atomic_load_u32(whichTest)) {
+		case Test.TEST_LOADING:
+		case Test.TEST_NOT_STARTED:
+			emscripten_outf("%cTEST_NOT_STARTED: should not been called", CSS);
+			break;
 		case Test.TEST_TRY_ACQUIRE:
 			// Was locked after init, should fail to acquire
 			result = emscripten_lock_try_acquire(testLock);
-			emscripten_outf("TEST_TRY_ACQUIRE: %d (expect: 0)", result);
+			emscripten_outf("%cTEST_TRY_ACQUIRE: %d (expect: 0)", CSS, result);
 			assert(!result);
 			emscripten_atomic_store_u32(whichTest, Test.TEST_WAIT_ACQUIRE_FAIL);
 			break;
 		case Test.TEST_WAIT_ACQUIRE_FAIL:
 			// Still locked so we fail to acquire
+    		emscripten_outf("%cTEST_WAIT_ACQUIRE_FAIL: spin for 100ms!", CSS);
 			result = emscripten_lock_busyspin_wait_acquire(testLock, 100);
-			emscripten_outf("TEST_WAIT_ACQUIRE_FAIL: %d (expect: 0)", result);
+			emscripten_outf("%cTEST_WAIT_ACQUIRE_FAIL: %d (expect: 0)", CSS, result);
 			assert(!result);
 			emscripten_atomic_store_u32(whichTest, Test.TEST_WAIT_ACQUIRE);
     		/*
@@ -47,25 +57,28 @@ class TestProcessor extends AudioWorkletProcessor {
     		 */
     	case Test.TEST_WAIT_ACQUIRE:
     		// Will get unlocked in worker/main, so should quickly acquire
+    		emscripten_outf("%cTEST_WAIT_ACQUIRE: start spinning!", CSS);
     		result = emscripten_lock_busyspin_wait_acquire(testLock, 1000);
-    		emscripten_outf("TEST_WAIT_ACQUIRE: %d  (expect: 1)", result);
+    		emscripten_outf("%cTEST_WAIT_ACQUIRE: %d (expect: 1)", CSS, result);
     		assert(result);
 			emscripten_atomic_store_u32(whichTest, Test.TEST_RELEASE);
 			break;
 		case Test.TEST_RELEASE:
 			// Unlock, check the result
+			emscripten_outf("%cTEST_RELEASE: unlocking", CSS);
 			emscripten_lock_release(testLock);
 			result = emscripten_lock_try_acquire(testLock);
-			emscripten_outf("TEST_RELEASE: %d (expect: 1)", result);
+			emscripten_outf("%cTEST_RELEASE: %d (expect: 1)", CSS, result);
 			assert(result);
 			emscripten_atomic_store_u32(whichTest, Test.TEST_DONE);
 			break;
-		case Test.TEST_DONE:
-			return false;
 		default:
-			break;
+			// Finished, exit from the audio thread
+			emscripten_outf("%cTEST_DONE in process()", CSS);
+			runAgain = false;
 		}
-		return true;
+		emscripten_outf("%c*** exit process()", CSS);
+		return runAgain;
 	}
 }
 
