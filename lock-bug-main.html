@@ -67,7 +67,7 @@ function MainLoop(time, data) {
 		emscripten_atomic_store_u32(whichTest, Test.TEST_TRY_ACQUIRE);
 		break;
 	case Test.TEST_TRY_ACQUIRE:
-		emscripten_out("%cTEST_TRY_ACQUIRE: worker/main nothing to do", CSS);
+		emscripten_outf("%cTEST_TRY_ACQUIRE: worker/main nothing to do", CSS);
 		break;
 	case Test.TEST_WAIT_ACQUIRE_FAIL:
 		emscripten_outf("%cTEST_WAIT_ACQUIRE_FAIL: worker/main nothing to do", CSS);
