@@ -103,7 +103,7 @@ export function _emscripten_thread_supports_atomics_wait() {
 	// Something like this should give the same result...
 	const testIdx = HEAP32.length - 1;
 	try {
-		console.assert(Atomics.wait(HEAP32, testIdx, HEAP32(testIdx) + 1, 0) == "not-equal");
+		Atomics.wait(HEAP32, testIdx, HEAP32(testIdx) ^ 0xCACAFACE, 0);
 	} catch(e) {
 		return false;
 	}
