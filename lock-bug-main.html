@@ -58,6 +58,7 @@ function mainLoop(time, data) {
 	assert(!emscripten_current_thread_is_audio_worklet()
 		&& !_emscripten_thread_supports_atomics_wait());
 	var runAgain = true;
+	var timeTook = 0;
 	switch (emscripten_atomic_load_u32(whichTest)) {
 	case Test.TEST_LOADING:
 		// Wait until the AudioWorkletProcessor (AWP) has loaded
@@ -90,8 +91,8 @@ function mainLoop(time, data) {
 		break;
 	default:
 		// Finished, exit from the main thread
-		result = emscripten_get_now() - startTime;
-		emscripten_outf("%cTEST_DONE: %dms (expect: > 100)", CSS_MAIN, result);
+		timeTook = emscripten_get_now() - startTime;
+		emscripten_outf("%cTEST_DONE: %dms (expect: > 100)", CSS_MAIN, timeTook);
 		runAgain = false;
 	}
 	emscripten_outf("%c*** exit mainLoop()", CSS_MAIN);
