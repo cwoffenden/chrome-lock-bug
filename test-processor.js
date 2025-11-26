@@ -5,7 +5,9 @@ import {
 	emscripten_atomic_store_u32,
 	emscripten_lock_busyspin_wait_acquire,
 	emscripten_lock_try_acquire,
-	emscripten_lock_release
+	emscripten_lock_release,
+	emscripten_current_thread_is_audio_worklet,
+	_emscripten_thread_supports_atomics_wait
 } from "./emscripten-api.js";
 
 // Style for the process() log (green)
@@ -28,8 +30,10 @@ class TestProcessor extends AudioWorkletProcessor {
 	}
 
 	process(inputs, outputs, params) {
-		var runAgain = true;
 		emscripten_outf("%c*** enter process()", CSS);
+		assert(emscripten_current_thread_is_audio_worklet()
+			&& !_emscripten_thread_supports_atomics_wait());
+		var runAgain = true;
 		var result = 0;
 		switch (emscripten_atomic_load_u32(whichTest)) {
 		case Test.TEST_LOADING:

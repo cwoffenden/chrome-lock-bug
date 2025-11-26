@@ -86,3 +86,26 @@ export function emscripten_set_timeout_loop(cb, msecs, userData) {
 	}
 	return setTimeout(tick, 0);
 }
+
+// emscripten/webaudio.h
+
+export function emscripten_current_thread_is_audio_worklet() {
+	try {
+		return globalThis instanceof AudioWorkletGlobalScope;
+	} catch(e) {
+		return false;
+	}
+}
+
+// pthread/threading_internal.h
+
+export function _emscripten_thread_supports_atomics_wait() {
+	// Something like this should give the same result...
+	const testIdx = HEAP32.length - 1;
+	try {
+		console.assert(Atomics.wait(HEAP32, testIdx, HEAP32(testIdx) + 1, 0) == "not-equal");
+	} catch(e) {
+		return false;
+	}
+	return true;
+}

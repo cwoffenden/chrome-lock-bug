@@ -37,7 +37,7 @@ const CSS = "color: #F0F";
 
 // Lock used in all the tests (address in HEAPU32.buffer)
 const testLock = 0;
-// Which test is running in worker/main (address in HEAPU32.buffer)
+// Which test is running (sometimes in the worklet, sometimes in the main thread; address in HEAPU32.buffer)
 const whichTest = 4;
 
 // Time at which the test starts, taken in main()
