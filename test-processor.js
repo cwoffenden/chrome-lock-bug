@@ -30,7 +30,7 @@ class TestProcessor extends AudioWorkletProcessor {
 	}
 
 	process(inputs, outputs, params) {
-		emscripten_outf("%c*** enter process()", CSS_PROC);
+		emscripten_outf("\t%c*** enter process()", CSS_PROC);
 		assert(emscripten_current_thread_is_audio_worklet()
 			&& !_emscripten_thread_supports_atomics_wait());
 		var runAgain = true;
@@ -38,20 +38,20 @@ class TestProcessor extends AudioWorkletProcessor {
 		switch (emscripten_atomic_load_u32(whichTest)) {
 		case Test.TEST_LOADING:
 		case Test.TEST_NOT_STARTED:
-			emscripten_outf("%cTEST_NOT_STARTED: should not been called", CSS_PROC);
+			emscripten_outf("\t%cTEST_NOT_STARTED: should not been called", CSS_PROC);
 			break;
 		case Test.TEST_TRY_ACQUIRE:
 			// Was locked after init, should fail to acquire
 			result = emscripten_lock_try_acquire(testLock);
-			emscripten_outf("%cTEST_TRY_ACQUIRE: %d (expect: 0)", CSS_PROC, result);
+			emscripten_outf("\t%cTEST_TRY_ACQUIRE: %d (expect: 0)", CSS_PROC, result);
 			assert(!result);
 			emscripten_atomic_store_u32(whichTest, Test.TEST_WAIT_ACQUIRE_FAIL);
 			break;
 		case Test.TEST_WAIT_ACQUIRE_FAIL:
 			// Still locked so we fail to acquire
-			emscripten_outf("%cTEST_WAIT_ACQUIRE_FAIL: spin for 100ms (count 'em!)", CSS_PROC);
+			emscripten_outf("\t%cTEST_WAIT_ACQUIRE_FAIL: spin for 100ms (count 'em!)", CSS_PROC);
 			result = emscripten_lock_busyspin_wait_acquire(testLock, 100);
-			emscripten_outf("%cTEST_WAIT_ACQUIRE_FAIL: %d (expect: 0)", CSS_PROC, result);
+			emscripten_outf("\t%cTEST_WAIT_ACQUIRE_FAIL: %d (expect: 0)", CSS_PROC, result);
 			assert(!result);
 			emscripten_atomic_store_u32(whichTest, Test.TEST_WAIT_ACQUIRE);
 			/*
@@ -61,27 +61,27 @@ class TestProcessor extends AudioWorkletProcessor {
 			 */
 		case Test.TEST_WAIT_ACQUIRE:
 			// Will get unlocked in worker/main, so should quickly acquire
-			emscripten_outf("%cTEST_WAIT_ACQUIRE: start spinning!", CSS_PROC);
+			emscripten_outf("\t%cTEST_WAIT_ACQUIRE: start spinning!", CSS_PROC);
 			result = emscripten_lock_busyspin_wait_acquire(testLock, 1000);
-			emscripten_outf("%cTEST_WAIT_ACQUIRE: %d (expect: 1)", CSS_PROC, result);
+			emscripten_outf("\t%cTEST_WAIT_ACQUIRE: %d (expect: 1)", CSS_PROC, result);
 			assert(result);
 			emscripten_atomic_store_u32(whichTest, Test.TEST_RELEASE);
 			break;
 		case Test.TEST_RELEASE:
 			// Unlock, check the result
-			emscripten_outf("%cTEST_RELEASE: unlocking", CSS_PROC);
+			emscripten_outf("\t%cTEST_RELEASE: unlocking", CSS_PROC);
 			emscripten_lock_release(testLock);
 			result = emscripten_lock_try_acquire(testLock);
-			emscripten_outf("%cTEST_RELEASE: %d (expect: 1)", CSS_PROC, result);
+			emscripten_outf("\t%cTEST_RELEASE: %d (expect: 1)", CSS_PROC, result);
 			assert(result);
 			emscripten_atomic_store_u32(whichTest, Test.TEST_DONE);
 			break;
 		default:
 			// Finished, exit from the audio thread
-			emscripten_outf("%cTEST_DONE in process()", CSS_PROC);
+			emscripten_outf("\t%cTEST_DONE in process()", CSS_PROC);
 			runAgain = false;
 		}
-		emscripten_outf("%c*** exit process()", CSS_PROC);
+		emscripten_outf("\t%c*** exit process()", CSS_PROC);
 		return runAgain;
 	}
 }
