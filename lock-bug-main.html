@@ -32,8 +32,8 @@ const Test = {
 	'TEST_DONE': 6,              // Test finished
 };
 
-// Style for the MainLoop log (magenta)
-const CSS = "color: #F0F";
+// Style for the mainLoop log (magenta)
+const CSS_MAIN = "color: #F0F";
 
 // Lock used in all the tests (address in HEAPU32.buffer)
 const testLock = 0;
@@ -53,52 +53,54 @@ var workletNode = null;
 /*
  * Called every 10ms-ish using a timeout.
  */
-function MainLoop(time, data) {
+function mainLoop(time, data) {
+	emscripten_outf("%c*** enter mainLoop()", CSS_MAIN);
+	assert(!emscripten_current_thread_is_audio_worklet()
+		&& !_emscripten_thread_supports_atomics_wait());
 	var runAgain = true;
-	emscripten_outf("%c*** enter MainLoop()", CSS);
 	switch (emscripten_atomic_load_u32(whichTest)) {
 	case Test.TEST_LOADING:
 		// Wait until the AudioWorkletProcessor (AWP) has loaded
-		emscripten_outf("%cTEST_LOADING: Still loading", CSS);
+		emscripten_outf("%cTEST_LOADING: Still loading", CSS_MAIN);
 		break;
 	case Test.TEST_NOT_STARTED:
 		// We're loaded, let the AWP know to start
-		emscripten_outf("%cTEST_NOT_STARTED: Staring test", CSS);
+		emscripten_outf("%cTEST_NOT_STARTED: Staring test", CSS_MAIN);
 		emscripten_atomic_store_u32(whichTest, Test.TEST_TRY_ACQUIRE);
 		break;
 	case Test.TEST_TRY_ACQUIRE:
-		emscripten_outf("%cTEST_TRY_ACQUIRE: worker/main nothing to do", CSS);
+		emscripten_outf("%cTEST_TRY_ACQUIRE: main nothing to do (waiting on AW starting)", CSS_MAIN);
 		break;
 	case Test.TEST_WAIT_ACQUIRE_FAIL:
-		emscripten_outf("%cTEST_WAIT_ACQUIRE_FAIL: worker/main nothing to do", CSS);
+		emscripten_outf("%cTEST_WAIT_ACQUIRE_FAIL: main nothing to do", CSS_MAIN);
 		break;
 	case Test.TEST_WAIT_ACQUIRE:
 		if (!waitAcquireUnlocked) {
 			// Release here to acquire in process()
-			emscripten_outf("%cTEST_WAIT_ACQUIRE: worker/main releasing lock", CSS);
+			emscripten_outf("%cTEST_WAIT_ACQUIRE: main releasing lock", CSS_MAIN);
 			emscripten_lock_release(testLock);
-			emscripten_outf("%cTEST_WAIT_ACQUIRE: worker/main released", CSS);
+			emscripten_outf("%cTEST_WAIT_ACQUIRE: main released", CSS_MAIN);
 			waitAcquireUnlocked = true;
 		} else {
-			emscripten_outf("%cTEST_WAIT_ACQUIRE: worker/main already unlocked", CSS);
+			emscripten_outf("%cTEST_WAIT_ACQUIRE: main already unlocked", CSS_MAIN);
 		}
 		break;
 	case Test.TEST_RELEASE:
-		emscripten_outf("%cTEST_RELEASE: worker/main nothing to do", CSS);
+		emscripten_outf("%cTEST_RELEASE: main nothing to do", CSS_MAIN);
 		break;
 	default:
 		// Finished, exit from the main thread
 		result = emscripten_get_now() - startTime;
-		emscripten_outf("%cTEST_DONE: %dms (expect: > 100)", CSS, result);
+		emscripten_outf("%cTEST_DONE: %dms (expect: > 100)", CSS_MAIN, result);
 		runAgain = false;
 	}
-	emscripten_outf("%c*** exit MainLoop()", CSS);
-    return runAgain;
+	emscripten_outf("%c*** exit mainLoop()", CSS_MAIN);
+	return runAgain;
 }
 
 function main() {
 	if (audioContext) {
-		emscripten_out("This was designed to run once, reload the page")
+		emscripten_out("This was designed to run once, reload the page");
 		return;
 	}
 	/*
@@ -139,9 +141,9 @@ function main() {
 		workletNode.connect(audioContext.destination);
 	});
 	/*
-	 * Keep this the same as the C version and let MainLoop watch 'whichTest'.
+	 * Keep this the same as the C version and let mainLoop watch 'whichTest'.
 	 */
-	emscripten_set_timeout_loop(MainLoop, 10, null);
+	emscripten_set_timeout_loop(mainLoop, 10, null);
 }
 
 		</script>
