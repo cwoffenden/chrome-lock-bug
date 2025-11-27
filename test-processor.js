@@ -11,7 +11,7 @@ import {
 } from "./emscripten-api.js";
 
 // Style for the process() log (green)
-const CSS_PROC = "color: #0F0";
+const STYLE_PROC = "\x1B[32m\t";
 
 class TestProcessor extends AudioWorkletProcessor {
 	constructor(args) {
@@ -21,37 +21,42 @@ class TestProcessor extends AudioWorkletProcessor {
 			for (var opt in args.processorOptions) {
 				globalThis[opt] = args.processorOptions[opt];
 			}
-			// Then signal to the main thread to start the test
-			emscripten_atomic_store_u32(whichTest, Test.TEST_NOT_STARTED);
+			
 		}
+		// Here just for testing
 		this.port.onmessage = (e) => {
-			emscripten_outf("AWP message: %s", e.data);
+			emscripten_outf("%sAWP message: %s", STYLE_PROC, e.data);
 		};
 	}
 
 	process(inputs, outputs, params) {
-		emscripten_outf("\t%c*** enter process()", CSS_PROC);
+		emscripten_outf("%s*** enter process()", STYLE_PROC);
 		assert(emscripten_current_thread_is_audio_worklet()
 			&& !_emscripten_thread_supports_atomics_wait());
 		var runAgain = true;
 		var result = 0;
 		switch (emscripten_atomic_load_u32(whichTest)) {
 		case Test.TEST_LOADING:
+			// AWP has been loaded, tell the main thread
+			emscripten_outf("%sTEST_LOADING", STYLE_PROC);
+			emscripten_atomic_store_u32(whichTest, Test.TEST_NOT_STARTED);
+			break;
 		case Test.TEST_NOT_STARTED:
-			emscripten_outf("\t%cTEST_NOT_STARTED: should not been called", CSS_PROC);
+			// Waiting on the main thread to acknowledge
+			emscripten_outf("%sTEST_NOT_STARTED", STYLE_PROC);
 			break;
 		case Test.TEST_TRY_ACQUIRE:
 			// Was locked after init, should fail to acquire
 			result = emscripten_lock_try_acquire(testLock);
-			emscripten_outf("\t%cTEST_TRY_ACQUIRE: %d (expect: 0)", CSS_PROC, result);
+			emscripten_outf("%sTEST_TRY_ACQUIRE: %d (expect: 0)", STYLE_PROC, result);
 			assert(!result);
 			emscripten_atomic_store_u32(whichTest, Test.TEST_WAIT_ACQUIRE_FAIL);
 			break;
 		case Test.TEST_WAIT_ACQUIRE_FAIL:
 			// Still locked so we fail to acquire
-			emscripten_outf("\t%cTEST_WAIT_ACQUIRE_FAIL: spin for 100ms (count 'em!)", CSS_PROC);
+			emscripten_outf("%sTEST_WAIT_ACQUIRE_FAIL: spin for 100ms (count 'em!)", STYLE_PROC);
 			result = emscripten_lock_busyspin_wait_acquire(testLock, 100);
-			emscripten_outf("\t%cTEST_WAIT_ACQUIRE_FAIL: %d (expect: 0)", CSS_PROC, result);
+			emscripten_outf("%sTEST_WAIT_ACQUIRE_FAIL: %d (expect: 0)", STYLE_PROC, result);
 			assert(!result);
 			emscripten_atomic_store_u32(whichTest, Test.TEST_WAIT_ACQUIRE);
 			/*
@@ -61,27 +66,27 @@ class TestProcessor extends AudioWorkletProcessor {
 			 */
 		case Test.TEST_WAIT_ACQUIRE:
 			// Will get unlocked in worker/main, so should quickly acquire
-			emscripten_outf("\t%cTEST_WAIT_ACQUIRE: start spinning!", CSS_PROC);
+			emscripten_outf("%sTEST_WAIT_ACQUIRE: start spinning!", STYLE_PROC);
 			result = emscripten_lock_busyspin_wait_acquire(testLock, 1000);
-			emscripten_outf("\t%cTEST_WAIT_ACQUIRE: %d (expect: 1)", CSS_PROC, result);
+			emscripten_outf("%sTEST_WAIT_ACQUIRE: %d (expect: 1)", STYLE_PROC, result);
 			assert(result);
 			emscripten_atomic_store_u32(whichTest, Test.TEST_RELEASE);
 			break;
 		case Test.TEST_RELEASE:
 			// Unlock, check the result
-			emscripten_outf("\t%cTEST_RELEASE: unlocking", CSS_PROC);
+			emscripten_outf("%sTEST_RELEASE: unlocking", STYLE_PROC);
 			emscripten_lock_release(testLock);
 			result = emscripten_lock_try_acquire(testLock);
-			emscripten_outf("\t%cTEST_RELEASE: %d (expect: 1)", CSS_PROC, result);
+			emscripten_outf("%sTEST_RELEASE: %d (expect: 1)", STYLE_PROC, result);
 			assert(result);
 			emscripten_atomic_store_u32(whichTest, Test.TEST_DONE);
 			break;
 		default:
 			// Finished, exit from the audio thread
-			emscripten_outf("\t%cTEST_DONE in process()", CSS_PROC);
+			emscripten_outf("%sTEST_DONE in process()", STYLE_PROC);
 			runAgain = false;
 		}
-		emscripten_outf("\t%c*** exit process()", CSS_PROC);
+		emscripten_outf("%s*** exit process()", STYLE_PROC);
 		return runAgain;
 	}
 }
