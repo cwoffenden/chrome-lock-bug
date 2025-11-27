@@ -29,6 +29,7 @@ class TestProcessor extends AudioWorkletProcessor {
 		};
 	}
 
+	// AW callback (called approx 375x per second)
 	process(inputs, outputs, params) {
 		emscripten_outf("%s*** enter process()", STYLE_PROC);
 		assert(emscripten_current_thread_is_audio_worklet()
@@ -60,12 +61,12 @@ class TestProcessor extends AudioWorkletProcessor {
 			assert(!result);
 			emscripten_atomic_store_u32(whichTest, Test.TEST_WAIT_ACQUIRE);
 			/*
-			 * Fall through here so the worker/main has a chance to unlock
-			 * whilst spinning (otherwise the lock has a chance to be released
-			 * before spinning).
+			 * Fall through here so the main has a chance to unlock whilst
+			 * spinning (otherwise the lock has a chance to be released before
+			 * spinning).
 			 */
 		case Test.TEST_WAIT_ACQUIRE:
-			// Will get unlocked in worker/main, so should quickly acquire
+			// Will get unlocked in the main, so should quickly acquire
 			emscripten_outf("%sTEST_WAIT_ACQUIRE: start spinning!", STYLE_PROC);
 			result = emscripten_lock_busyspin_wait_acquire(testLock, 1000);
 			emscripten_outf("%sTEST_WAIT_ACQUIRE: %d (expect: 1)", STYLE_PROC, result);
