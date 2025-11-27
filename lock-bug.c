@@ -50,7 +50,8 @@ bool process(int numInputs, const AudioSampleFrame *inputs, int numOutputs, Audi
 	assert(emscripten_current_thread_is_audio_worklet()
 		&& !_emscripten_thread_supports_atomics_wait());
 	bool runAgain = true;
-	int result = 0;
+	int result;
+	double waitMs;
 	switch (emscripten_atomic_load_u32(whichTest)) {
 	case TEST_LOADING:
 		// AWP has been loaded, tell the main thread
@@ -71,8 +72,10 @@ bool process(int numInputs, const AudioSampleFrame *inputs, int numOutputs, Audi
 	case TEST_WAIT_ACQUIRE_FAIL:
 		// Still locked so we fail to acquire
 		emscripten_outf("%sTEST_WAIT_ACQUIRE_FAIL: spin for 100ms (count 'em!)", STYLE_PROC);
+		waitMs = emscripten_get_now();
 		result = emscripten_lock_busyspin_wait_acquire(testLock, 100);
-		emscripten_outf("%sTEST_WAIT_ACQUIRE_FAIL: %d (expect: 0)", STYLE_PROC, result);
+		waitMs = emscripten_get_now() - waitMs;
+		emscripten_outf("%sTEST_WAIT_ACQUIRE_FAIL: %d (expect: 0, spinning for %dms)", STYLE_PROC, result, (int) waitMs);
 		assert(!result);
 		emscripten_atomic_store_u32(whichTest, TEST_WAIT_ACQUIRE);
     	/*
@@ -83,8 +86,10 @@ bool process(int numInputs, const AudioSampleFrame *inputs, int numOutputs, Audi
     case TEST_WAIT_ACQUIRE:
 		// Will get unlocked in the main, so should quickly acquire
 		emscripten_outf("%sTEST_WAIT_ACQUIRE: start spinning!", STYLE_PROC);
+		waitMs = emscripten_get_now();
 		result = emscripten_lock_busyspin_wait_acquire(testLock, 1000);
-		emscripten_outf("%sTEST_WAIT_ACQUIRE: %d (expect: 1)", STYLE_PROC, result);
+		waitMs = emscripten_get_now() - waitMs;
+		emscripten_outf("%sTEST_WAIT_ACQUIRE: %d (expect: 1, spinning for %dms)", STYLE_PROC, result, (int) waitMs);
 		assert(result);
 		emscripten_atomic_store_u32(whichTest, TEST_RELEASE);
 		break;
