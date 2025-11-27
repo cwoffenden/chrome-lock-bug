@@ -16,6 +16,6 @@ Emscripten compiled version [here](//wip.numfum.com/cw/2025-11-27/lock-bug-c.htm
 
 Having already cloned the repo:
 ```
-emcc -sAUDIO_WORKLET -sWASM_WORKERS -sNO_EXIT_RUNTIME -sSTRICT --shell-file=shell.html -pthread -O1 -g -o lock-bug-c.html lock-bug.c
+emcc -sAUDIO_WORKLET -sWASM_WORKERS -sNO_EXIT_RUNTIME --shell-file=shell.html -pthread -O1 -g -o lock-bug-c.html lock-bug.c
 emrun --browser chrome lock-bug-c.html
 ```

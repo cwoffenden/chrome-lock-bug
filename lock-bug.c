@@ -2,7 +2,7 @@
 #include <emscripten/webaudio.h>
 #include <assert.h>
 
-// Build with emcc -sAUDIO_WORKLET -sWASM_WORKERS -sNO_EXIT_RUNTIME -sSTRICT --shell-file=shell.html -pthread -O1 -g -o index.html lock-bug.c
+// Build with emcc -sAUDIO_WORKLET -sWASM_WORKERS -sNO_EXIT_RUNTIME --shell-file=shell.html -pthread -O1 -g -o index.html lock-bug.c
 
 // Internal, found in 'system/lib/pthread/threading_internal.h' (and requires building with -pthread)
 int _emscripten_thread_supports_atomics_wait(void);
