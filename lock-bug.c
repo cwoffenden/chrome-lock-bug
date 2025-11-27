@@ -91,7 +91,7 @@ bool process(int numInputs, const AudioSampleFrame *inputs, int numOutputs, Audi
 		waitMs = emscripten_get_now() - waitMs;
 		emscripten_outf("%sTEST_WAIT_ACQUIRE: %d (expect: 1, spinning for %dms)", STYLE_PROC, result, (int) waitMs);
 		assert(result);
-		emscripten_atomic_store_u32(whichTest, TEST_RELEASE);
+		emscripten_atomic_store_u32(whichTest, (result) ? TEST_RELEASE : TEST_DONE);
 		break;
 	case TEST_RELEASE:
 		// Unlock, check the result

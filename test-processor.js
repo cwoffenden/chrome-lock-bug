@@ -77,7 +77,7 @@ class TestProcessor extends AudioWorkletProcessor {
 			waitMs = emscripten_get_now() - waitMs;
 			emscripten_outf("%sTEST_WAIT_ACQUIRE: %d (expect: 1, spinning for %dms)", STYLE_PROC, result, waitMs);
 			assert(result);
-			emscripten_atomic_store_u32(whichTest, Test.TEST_RELEASE);
+			emscripten_atomic_store_u32(whichTest, (result) ? Test.TEST_RELEASE : Test.TEST_DONE);
 			break;
 		case Test.TEST_RELEASE:
 			// Unlock, check the result
