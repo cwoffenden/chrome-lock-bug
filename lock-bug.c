@@ -90,8 +90,9 @@ bool process(int numInputs, const AudioSampleFrame *inputs, int numOutputs, Audi
 		result = emscripten_lock_busyspin_wait_acquire(testLock, 1000);
 		waitMs = emscripten_get_now() - waitMs;
 		emscripten_outf("%sTEST_WAIT_ACQUIRE: %d (expect: 1, spinning for %dms)", STYLE_PROC, result, (int) waitMs);
-		assert(result);
+		// Assert after, since this is where it can fail and kill the callback
 		emscripten_atomic_store_u32(whichTest, (result) ? TEST_RELEASE : TEST_DONE);
+		assert(result);
 		break;
 	case TEST_RELEASE:
 		// Unlock, check the result
