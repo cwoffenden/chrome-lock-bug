@@ -53,6 +53,10 @@ class TestProcessor extends AudioWorkletProcessor {
 			emscripten_atomic_store_u32(whichTest, Test.TEST_NOT_STARTED);
 			break;
 		case Test.TEST_NOT_STARTED:
+			// Periodically clear the console (it gets sluggish otherwise)
+			if (this.howMany && this.howMany & 63) {
+				console.clear();
+			}
 			// Waiting on the main thread to acknowledge
 			emscripten_outf("%sTEST_NOT_STARTED", STYLE_PROC);
 			break;
