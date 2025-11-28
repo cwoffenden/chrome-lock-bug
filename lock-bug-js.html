@@ -53,8 +53,6 @@ var workletNode = null;
 // Called every 10ms-ish using a timeout
 function mainLoop(time, data) {
 	emscripten_outf("%s*** enter mainLoop()", STYLE_MAIN);
-	assert(!emscripten_current_thread_is_audio_worklet()
-		&& !_emscripten_thread_supports_atomics_wait());
 	var runAgain = true;
 	switch (emscripten_atomic_load_u32(whichTest)) {
 	case Test.TEST_LOADING:
@@ -62,6 +60,8 @@ function mainLoop(time, data) {
 		emscripten_outf("%sTEST_LOADING: Still loading", STYLE_MAIN);
 		break;
 	case Test.TEST_NOT_STARTED:
+		assert(!emscripten_current_thread_is_audio_worklet()
+			&& !_emscripten_thread_supports_atomics_wait());
 		// The AWP has loaded, so move to the first test
 		emscripten_outf("%sTEST_NOT_STARTED: Staring test", STYLE_MAIN);
 		emscripten_atomic_store_u32(whichTest, Test.TEST_TRY_ACQUIRE);

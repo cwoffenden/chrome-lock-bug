@@ -38,13 +38,13 @@ class TestProcessor extends AudioWorkletProcessor {
 	// AW callback (called approx 375x per second)
 	process(inputs, outputs, params) {
 		emscripten_outf("%s*** enter process()", STYLE_PROC);
-		assert(emscripten_current_thread_is_audio_worklet()
-			&& !_emscripten_thread_supports_atomics_wait());
 		var runAgain = true;
 		var result;
 		var waitMs;
 		switch (emscripten_atomic_load_u32(whichTest)) {
 		case Test.TEST_LOADING:
+			assert(emscripten_current_thread_is_audio_worklet()
+				&& !_emscripten_thread_supports_atomics_wait());
 			// AWP has been loaded, tell the main thread
 			emscripten_outf("%sTEST_LOADING", STYLE_PROC);
 			emscripten_atomic_store_u32(whichTest, Test.TEST_NOT_STARTED);
