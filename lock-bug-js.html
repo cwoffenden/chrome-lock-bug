@@ -152,10 +152,17 @@ function runTest() {
 	emscripten_set_timeout_loop(mainLoop, 10, null);
 }
 
+// Very dirty stop (mostly to read the log)
+function stopTest() {
+	emscripten_out("Stopping test, ignore any errors");
+	emscripten_atomic_store_u32(whichTest, Test.TEST_DONE);
+}
+
 		</script>
 	</head>
 	<body>
 		<p>Click to start the test, results are in the console.</p>
 		<button type="button" onclick="runTest()">Start Test</button>
+		<button type="button" onclick="stopTest()">Stop Test</button>
 	</body>
 </html>
