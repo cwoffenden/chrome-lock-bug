@@ -91,9 +91,9 @@ export function emscripten_set_timeout_loop(cb, msecs, userData) {
 
 export function emscripten_current_thread_is_audio_worklet() {
 	try {
-		return globalThis instanceof AudioWorkletGlobalScope;
+		return (globalThis instanceof AudioWorkletGlobalScope) ? 1 : 0;
 	} catch(e) {
-		return false;
+		return 0;
 	}
 }
 
@@ -105,9 +105,9 @@ export function _emscripten_thread_supports_atomics_wait() {
 	try {
 		Atomics.wait(HEAP32, testIdx, HEAP32(testIdx) ^ 0xCACAFACE, 0);
 	} catch(e) {
-		return false;
+		return 0;
 	}
-	return true;
+	return 1;
 }
 
 // From Xplat glue, not Emscripten:
