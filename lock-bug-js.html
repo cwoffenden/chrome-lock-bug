@@ -42,6 +42,8 @@ const whichTest = 4;
 
 // Time at which the test starts, taken in runTest()
 var startTime = 0;
+// Time at which mainLoop was last called (to time the interval)
+var lastTime = 0;
 // Has TEST_WAIT_ACQUIRE unlocked testLock?
 var waitAcquireUnlocked = false;
 // How many runs through has this done?
@@ -54,7 +56,8 @@ var workletNode = null;
 
 // Called every 10ms-ish using a timeout
 function mainLoop(time, data) {
-	emscripten_outf("%s*** enter mainLoop()", STYLE_MAIN);
+	emscripten_outf("%s*** enter mainLoop() (%dms since last)", STYLE_MAIN, time - lastTime);
+	lastTime = time;
 	var runAgain = true;
 	switch (emscripten_atomic_load_u32(whichTest)) {
 	case Test.TEST_LOADING:
@@ -157,6 +160,7 @@ function runTest() {
 	/*
 	 * Keep this the same as the C version and let mainLoop watch 'whichTest'.
 	 */
+	lastTime = startTime;
 	emscripten_set_timeout_loop(mainLoop, 10, null);
 }
 
