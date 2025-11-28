@@ -109,3 +109,41 @@ export function _emscripten_thread_supports_atomics_wait() {
 	}
 	return true;
 }
+
+// From Xplat glue, not Emscripten:
+
+export const Browser = {
+	"BROWSER_UNKNOWN": 0, // Unknown or unable to determine
+	"BROWSER_FIREFOX": 1, // Firefox (plus Firefox-derived, such as Iceweasel)
+	"BROWSER_CHROME" : 2, // Chrome (desktop, Chromebook and mobile, plus Chrome-derived, such as Opera)
+	"BROWSER_SAFARI" : 3, // Safari (desktop and mobile)
+	"BROWSER_IE"     : 4, // IE11 (and earlier if WebGL is not required)
+	"BROWSER_EDGE"   : 5, // Edge (the original pre-2019 legacy Edge)
+};
+
+export function getBrowser() {
+	// Copy and paste, we only want Chrome but this works on order
+	if (globalThis.navigator || globalThis.userAgent) {
+		var ua = String(globalThis.navigator ? navigator.userAgent : userAgent);
+		if (/Firefox\/\d+\.\d+/.test(ua)) {
+			return Browser.BROWSER_FIREFOX;
+		} else {
+			if (/Edge\/\d+\.\d+/.test(ua)) {
+				return Browser.BROWSER_EDGE;
+			} else {
+				if (/^((?!Chrome).)*Safari\/\d+\.\d+/.test(ua)) {
+					return Browser.BROWSER_SAFARI;
+				} else {
+					if (/Chrome\/\d+\.\d+/.test(ua)) {
+						return Browser.BROWSER_CHROME;
+					} else {
+						if (/Trident\/\d+\.\d+/.test(ua)) {
+							return Browser.BROWSER_IE;
+						}
+					}
+				}
+			}
+		}
+	}
+	return Browser.BROWSER_UNKNOWN;
+}

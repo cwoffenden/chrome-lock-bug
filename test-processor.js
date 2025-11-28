@@ -8,11 +8,13 @@ import {
 	emscripten_lock_try_acquire,
 	emscripten_lock_release,
 	emscripten_current_thread_is_audio_worklet,
-	_emscripten_thread_supports_atomics_wait
+	_emscripten_thread_supports_atomics_wait,
+	Browser,
+	getBrowser,
 } from "./emscripten-api.js";
 
 // Style for the process() log (green)
-const STYLE_PROC = "\x1B[32m\t";
+var STYLE_PROC = "\x1B[32m\t";
 
 class TestProcessor extends AudioWorkletProcessor {
 	constructor(args) {
@@ -22,7 +24,10 @@ class TestProcessor extends AudioWorkletProcessor {
 			for (var opt in args.processorOptions) {
 				globalThis[opt] = args.processorOptions[opt];
 			}
-			
+		}
+		if (getBrowser() != Browser.BROWSER_CHROME) {
+		// No ANSI colours if this isn't Chrome
+			STYLE_PROC = "\t";
 		}
 		// Here just for testing
 		this.port.onmessage = (e) => {

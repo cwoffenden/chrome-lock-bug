@@ -10,8 +10,8 @@
  * from both the web worklet and here, and with the same HEAPU32).
  */
 import * as Emscripten from "./emscripten-api.js";
-for (var func in Emscripten) {
-	globalThis[func] = Emscripten[func];
+for (var api in Emscripten) {
+	globalThis[api] = Emscripten[api];
 }
 		</script>
 		<title>Lock Bug JavaScript Test</title>
@@ -23,17 +23,17 @@ const HEAPU32 = new Uint32Array(wasmMemory);
 const HEAP32 = new Int32Array(wasmMemory);
 
 const Test = {
-	'TEST_LOADING': 0,           // The page is still loading
-	'TEST_NOT_STARTED': 1,       // The test hasn't yet started
-	'TEST_TRY_ACQUIRE': 2,       // Acquired in main, fail in process()
-	'TEST_WAIT_ACQUIRE_FAIL': 3, // Keep acquired so time-out
-	'TEST_WAIT_ACQUIRE': 4,      // Release in main, succeed in process()
-	'TEST_RELEASE': 5,           // Release in process() after above
-	'TEST_DONE': 6,              // Test finished
+	"TEST_LOADING"          : 0, // The page is still loading
+	"TEST_NOT_STARTED"      : 1, // The test hasn't yet started
+	"TEST_TRY_ACQUIRE"      : 2, // Acquired in main, fail in process()
+	"TEST_WAIT_ACQUIRE_FAIL": 3, // Keep acquired so time-out
+	"TEST_WAIT_ACQUIRE"     : 4, // Release in main, succeed in process()
+	"TEST_RELEASE"          : 5, // Release in process() after above
+	"TEST_DONE"             : 6, // Test finished
 };
 
 // Style for the mainLoop log (magenta)
-const STYLE_MAIN = "\x1B[95m";
+var STYLE_MAIN = "\x1B[95m";
 
 // Lock used in all the tests (address in HEAPU32.buffer)
 const testLock = 0;
@@ -101,6 +101,10 @@ function runTest() {
 		emscripten_out("This was designed to run once, reload the page");
 		return;
 	}
+	if (getBrowser() != Browser.BROWSER_CHROME) {
+		// No ANSI colours if this isn't Chrome
+		STYLE_MAIN = "";
+	}
 	/*
 	 * The basics: do locks work?
 	 */
@@ -134,6 +138,7 @@ function runTest() {
 				Test,
 				testLock,
 				whichTest,
+				userAgent: navigator.userAgent,
 			}
 		});
 		workletNode.connect(audioContext.destination);
