@@ -26,7 +26,7 @@ class TestProcessor extends AudioWorkletProcessor {
 			}
 		}
 		if (getBrowser() != Browser.BROWSER_CHROME) {
-		// No ANSI colours if this isn't Chrome
+			// No ANSI colours if this isn't Chrome
 			STYLE_PROC = "\t";
 		}
 		// Here just for testing
@@ -46,7 +46,9 @@ class TestProcessor extends AudioWorkletProcessor {
 			assert(emscripten_current_thread_is_audio_worklet()
 				&& !_emscripten_thread_supports_atomics_wait());
 			// AWP has been loaded, tell the main thread
-			emscripten_outf("%sTEST_LOADING", STYLE_PROC);
+			emscripten_outf("%sTEST_LOADING (is AW: %d, has wait: %d, expect: 1 & 0)",
+				STYLE_PROC, emscripten_current_thread_is_audio_worklet(),
+					_emscripten_thread_supports_atomics_wait());
 			emscripten_atomic_store_u32(whichTest, Test.TEST_NOT_STARTED);
 			break;
 		case Test.TEST_NOT_STARTED:

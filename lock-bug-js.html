@@ -63,7 +63,9 @@ function mainLoop(time, data) {
 		assert(!emscripten_current_thread_is_audio_worklet()
 			&& !_emscripten_thread_supports_atomics_wait());
 		// The AWP has loaded, so move to the first test
-		emscripten_outf("%sTEST_NOT_STARTED: Staring test", STYLE_MAIN);
+		emscripten_outf("%sTEST_NOT_STARTED: Staring test (is AW: %d, has wait: %d, expect 0 & 0)",
+			STYLE_MAIN, emscripten_current_thread_is_audio_worklet(),
+				_emscripten_thread_supports_atomics_wait());
 		emscripten_atomic_store_u32(whichTest, Test.TEST_TRY_ACQUIRE);
 		break;
 	case Test.TEST_TRY_ACQUIRE:
