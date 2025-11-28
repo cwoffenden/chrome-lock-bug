@@ -132,7 +132,7 @@ bool process(int numInputs, const AudioSampleFrame *inputs, int numOutputs, Audi
 		// Will get unlocked in the main, so should quickly acquire
 		emscripten_outf("%sTEST_WAIT_ACQUIRE: start spinning!", STYLE_PROC);
 		waitMs = emscripten_get_now();
-		result = emscripten_lock_busyspin_wait_acquire(testLock, 1000);
+		result = emscripten_lock_busyspin_wait_acquire(testLock, 100);
 		waitMs = emscripten_get_now() - waitMs;
 		emscripten_outf("%sTEST_WAIT_ACQUIRE: %d (expect: 1, spinning for %dms)", STYLE_PROC, result, (int) waitMs);
 		// Assert after, since this is where it can fail and kill the callback
