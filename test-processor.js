@@ -33,6 +33,7 @@ class TestProcessor extends AudioWorkletProcessor {
 		this.port.onmessage = (e) => {
 			emscripten_outf("%sAWP message: %s", STYLE_PROC, e.data);
 		};
+		this.howMany = 0;
 	}
 
 	// AW callback (called approx 375x per second)
@@ -92,9 +93,9 @@ class TestProcessor extends AudioWorkletProcessor {
 			emscripten_outf("%sTEST_RELEASE: unlocking", STYLE_PROC);
 			emscripten_lock_release(testLock);
 			result = emscripten_lock_try_acquire(testLock);
-			emscripten_outf("%sTEST_RELEASE: %d (expect: 1)", STYLE_PROC, result);
+			emscripten_outf("%sTEST_RELEASE: %d (expect: 1, runs: %d)", STYLE_PROC, result, this.howMany++);
 			assert(result);
-			emscripten_atomic_store_u32(whichTest, Test.TEST_DONE);
+			emscripten_atomic_store_u32(whichTest, Test.TEST_NOT_STARTED);
 			break;
 		default:
 			// Finished, exit from the audio thread

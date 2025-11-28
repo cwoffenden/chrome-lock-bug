@@ -66,13 +66,14 @@ function mainLoop(time, data) {
 		emscripten_outf("%sTEST_NOT_STARTED: Staring test (is AW: %d, has wait: %d, expect 0 & 0)",
 			STYLE_MAIN, emscripten_current_thread_is_audio_worklet(),
 				_emscripten_thread_supports_atomics_wait());
+		waitAcquireUnlocked = false;
 		emscripten_atomic_store_u32(whichTest, Test.TEST_TRY_ACQUIRE);
 		break;
 	case Test.TEST_TRY_ACQUIRE:
 		emscripten_outf("%sTEST_TRY_ACQUIRE: main nothing to do (waiting on AW starting)", STYLE_MAIN);
 		break;
 	case Test.TEST_WAIT_ACQUIRE_FAIL:
-		emscripten_outf("%sTEST_WAIT_ACQUIRE_FAIL: main nothing to do", STYLE_MAIN);
+		emscripten_outf("%sTEST_WAIT_ACQUIRE_FAIL: main waiting out 100ms", STYLE_MAIN);
 		break;
 	case Test.TEST_WAIT_ACQUIRE:
 		if (!waitAcquireUnlocked) {
