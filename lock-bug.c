@@ -43,6 +43,8 @@ Test* const whichTest = &(Test){};
 
 // Time at which the test starts taken in runTest()
 double startTime = 0;
+// Time at which mainLoop was last called (to time the interval)
+double lastTime = 0;
 // Has TEST_WAIT_ACQUIRE unlocked testLock?
 bool waitAcquireUnlocked = false;
 // How many runs through has this done?
@@ -159,7 +161,8 @@ bool process(int numInputs, const AudioSampleFrame *inputs, int numOutputs, Audi
 
 // Called every 10ms-ish using a timeout
 bool mainLoop(double time, void* data) {
-	emscripten_outf("%s*** enter mainLoop()", STYLE_MAIN);
+	emscripten_outf("%s*** enter mainLoop() (%dms since last)", STYLE_MAIN, (int) (time - lastTime));
+	lastTime = time;
 	bool runAgain = true;
 	switch (emscripten_atomic_load_u32(whichTest)) {
 	case TEST_LOADING:
@@ -252,7 +255,7 @@ KEEP_IN_MODULE void runTest() {
 	int hasLock = emscripten_lock_busyspin_wait_acquire(testLock, 0);
 	assert(hasLock);
 	/*
-	 * Then prepare to run,
+	 * Then prepare to run.
 	 */
 	emscripten_atomic_store_u32(whichTest, TEST_LOADING);
 	startTime = emscripten_get_now();
@@ -265,6 +268,7 @@ KEEP_IN_MODULE void runTest() {
 	/*
 	 * Timout callback every 10ms.
 	 */
+	lastTime = startTime;
 	emscripten_set_timeout_loop(mainLoop, 10, NULL);
 }
 
