@@ -146,7 +146,7 @@ bool process(int numInputs, const AudioSampleFrame *inputs, int numOutputs, Audi
 		result = emscripten_lock_try_acquire(testLock);
 		emscripten_outf("%sTEST_RELEASE: %d (expect: 1)", STYLE_PROC, result);
 		assert(result);
-		emscripten_atomic_store_u32(whichTest, TEST_NOT_STARTED);
+		emscripten_atomic_store_u32(whichTest, TEST_DONE); //<-- Change to TEST_NOT_STARTED to run in a loop
 		break;
 	default:
 		// Finished, exit from the audio thread
