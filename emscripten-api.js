@@ -9,6 +9,9 @@
 
 export function assert(val) {
 	console.assert(val);
+	if (!val) {
+		throw Error("Assertion failed");
+	}
 }
 
 // emscripten/emscripten.h
