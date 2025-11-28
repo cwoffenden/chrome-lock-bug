@@ -110,7 +110,7 @@ export function _emscripten_thread_supports_atomics_wait() {
 	return 1;
 }
 
-// From Xplat glue, not Emscripten:
+// From Xplat glue or otherwise, not Emscripten:
 
 export const Browser = {
 	"BROWSER_UNKNOWN": 0, // Unknown or unable to determine
@@ -146,4 +146,8 @@ export function getBrowser() {
 		}
 	}
 	return Browser.BROWSER_UNKNOWN;
+}
+
+export function console_clear() {
+	console.clear();
 }

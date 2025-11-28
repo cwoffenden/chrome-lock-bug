@@ -33,7 +33,6 @@ class TestProcessor extends AudioWorkletProcessor {
 		this.port.onmessage = (e) => {
 			emscripten_outf("%sAWP message: %s", STYLE_PROC, e.data);
 		};
-		this.howMany = 0;
 	}
 
 	// AW callback (called approx 375x per second)
@@ -53,12 +52,8 @@ class TestProcessor extends AudioWorkletProcessor {
 			emscripten_atomic_store_u32(whichTest, Test.TEST_NOT_STARTED);
 			break;
 		case Test.TEST_NOT_STARTED:
-			// Periodically clear the console (it gets sluggish otherwise)
-			if (this.howMany && ((this.howMany & 63) == 0)) {
-				console.clear();
-			}
 			// Waiting on the main thread to acknowledge
-			emscripten_outf("%sTEST_NOT_STARTED", STYLE_PROC);
+			emscripten_outf("%sTEST_NOT_STARTED (may spam a lot)", STYLE_PROC);
 			break;
 		case Test.TEST_TRY_ACQUIRE:
 			// Was locked after init, should fail to acquire
@@ -97,14 +92,13 @@ class TestProcessor extends AudioWorkletProcessor {
 			emscripten_outf("%sTEST_RELEASE: unlocking", STYLE_PROC);
 			emscripten_lock_release(testLock);
 			result = emscripten_lock_try_acquire(testLock);
-			emscripten_outf("%sTEST_RELEASE: %d (expect: 1, runs: %d)", STYLE_PROC, result);
+			emscripten_outf("%sTEST_RELEASE: %d (expect: 1)", STYLE_PROC, result);
 			assert(result);
-			this.howMany++;
 			emscripten_atomic_store_u32(whichTest, Test.TEST_NOT_STARTED);
 			break;
 		default:
 			// Finished, exit from the audio thread
-			emscripten_outf("%sTEST_DONE in process (runs: %d)", STYLE_PROC, this.howMany);
+			emscripten_outf("%sTEST_DONE in process", STYLE_PROC);
 			runAgain = false;
 		}
 		emscripten_outf("%s*** exit process()", STYLE_PROC);

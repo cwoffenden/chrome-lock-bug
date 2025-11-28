@@ -44,6 +44,8 @@ const whichTest = 4;
 var startTime = 0;
 // Has TEST_WAIT_ACQUIRE unlocked testLock?
 var waitAcquireUnlocked = false;
+// How many runs through has this done?
+var runCount = 0;
 
 // Audio context (created in main())
 var audioContext = null;
@@ -62,6 +64,10 @@ function mainLoop(time, data) {
 	case Test.TEST_NOT_STARTED:
 		assert(!emscripten_current_thread_is_audio_worklet()
 			&& !_emscripten_thread_supports_atomics_wait());
+		// Periodically clear the console (it gets sluggish otherwise)
+		if (runCount > 0 && (runCount & 63) == 0) {
+			console_clear();
+		}
 		// The AWP has loaded, so move to the first test
 		emscripten_outf("%sTEST_NOT_STARTED: Staring test (is AW: %d, has wait: %d, expect 0 & 0)",
 			STYLE_MAIN, emscripten_current_thread_is_audio_worklet(),
@@ -82,6 +88,7 @@ function mainLoop(time, data) {
 			emscripten_lock_release(testLock);
 			emscripten_outf("%sTEST_WAIT_ACQUIRE: main lock released", STYLE_MAIN);
 			waitAcquireUnlocked = true;
+			runCount++;
 		} else {
 			emscripten_outf("%sTEST_WAIT_ACQUIRE: main already unlocked", STYLE_MAIN);
 		}
@@ -91,7 +98,8 @@ function mainLoop(time, data) {
 		break;
 	default:
 		// Finished, exit from the main thread
-		emscripten_outf("%sTEST_DONE: %dms (expect: > 100)", STYLE_MAIN, emscripten_get_now() - startTime);
+		emscripten_outf("%sTEST_DONE: %dms (expect: > 100, runs: %d)", STYLE_MAIN,
+			emscripten_get_now() - startTime, runCount);
 		runAgain = false;
 	}
 	emscripten_outf("%s*** exit mainLoop()", STYLE_MAIN);
