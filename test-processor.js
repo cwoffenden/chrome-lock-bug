@@ -54,7 +54,7 @@ class TestProcessor extends AudioWorkletProcessor {
 			break;
 		case Test.TEST_NOT_STARTED:
 			// Periodically clear the console (it gets sluggish otherwise)
-			if (this.howMany && this.howMany & 63) {
+			if (this.howMany && ((this.howMany & 63) == 0)) {
 				console.clear();
 			}
 			// Waiting on the main thread to acknowledge
@@ -97,13 +97,14 @@ class TestProcessor extends AudioWorkletProcessor {
 			emscripten_outf("%sTEST_RELEASE: unlocking", STYLE_PROC);
 			emscripten_lock_release(testLock);
 			result = emscripten_lock_try_acquire(testLock);
-			emscripten_outf("%sTEST_RELEASE: %d (expect: 1, runs: %d)", STYLE_PROC, result, this.howMany++);
+			emscripten_outf("%sTEST_RELEASE: %d (expect: 1, runs: %d)", STYLE_PROC, result);
 			assert(result);
+			this.howMany++;
 			emscripten_atomic_store_u32(whichTest, Test.TEST_NOT_STARTED);
 			break;
 		default:
 			// Finished, exit from the audio thread
-			emscripten_outf("%sTEST_DONE in process()", STYLE_PROC);
+			emscripten_outf("%sTEST_DONE in process (runs: %d)", STYLE_PROC, this.howMany);
 			runAgain = false;
 		}
 		emscripten_outf("%s*** exit process()", STYLE_PROC);
