@@ -1,5 +1,7 @@
 # Chrome Lock Bug Minimal Example
 
+Result: this test is triggering intentional behaviour in how Chrome treats timeouts. Code left here for future reference (the pure JS Emscripten API may come in handy).
+
 Pure JavaScript version [here](//wip.numfum.com/cw/2025-11-27/lock-bug-main.html). The results are shown in the browser's console.
 
 This is a port of the C version to pure JS, following as closely the original version as possible.
